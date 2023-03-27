@@ -1,0 +1,6 @@
+.env
+poetryvenv
+poems.db
+poems
+attachments
+__pycache__
