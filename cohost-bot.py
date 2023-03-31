@@ -46,7 +46,7 @@ def make_post(poemRow, columns):
     print("pulled up project")
 
     if poemDict['title']:
-        newPost = project.post(poemDict['title'], blocks, tags=poemDict['tags'], draft=True)
+        newPost = project.post(poemDict['title'], blocks, tags=poemDict['tags'])
     else:
         newPost = project.post(headline="", blocks=blocks, tags=poemDict['tags'])
 
