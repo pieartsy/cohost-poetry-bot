@@ -74,7 +74,7 @@ def make_post(poemRow, columns):
 
     # make the actual post. the page returns a 403 if it's private (i think??) so it's an exception
     try:
-        newPost = project.post(headline=headline, blocks=blocks, tags=tags, cws=cws, draft=True)
+        newPost = project.post(headline=headline, blocks=blocks, tags=tags, cws=cws)
     except PermissionError:
         write_file("Private", "the page is private. Unprivate it and try again.")
 
