@@ -8,35 +8,62 @@ con = sqlite3.connect('poems.db')
 
 cur = con.cursor()
 
-def writeFile(filename, content):
-    '''writes to a file on the desktop with the date of trying to run the script and a message'''
+def write_file(filename, content):
+    '''
+    Writes to a file on the desktop. The filename is appended with the date of trying to run the script and contains a message.
+        
+        Parameters:
+                filename (str): what the file will be named
+                content (str): what message will be written in the file
+        
+        Returns:
+                None
+    '''
+    # imports datetime module and gets the time now
     import datetime
     now = datetime.datetime.now()
-    filename = f"C:\\Users\\maddi\\Desktop\\{filename}_{now.strftime('%b')}_{now.strftime('%d')}_{now.strftime('%y')}.txt"
+    # names file after filename parameter + date formatted as April_23 with a markdown extension (so that links are clickable if present)
+    name_of_file = f"C:\\Users\\maddi\\Desktop\\{filename}_{now.strftime('%b')}_{now.strftime('%d')}.md"
 
-    with open(filename, "a+") as f:
-        f.write(f"\nIt's {now.strftime('%x')} and {content}!")
+    # writes to file mentioning the date and the content.
+    with open(name_of_file, "a+") as f:
+        f.write(f"It's {now.strftime('%x')} and {content}\n")
 
 
 def make_post(poemRow, columns):
-    '''makes a cohost post based off the formatted poem data from the database'''
+    '''
+    Logs in with the cohost API and makes a cohost post based off the formatted poem data from the database
+            
+        Parameters:
+                poem_row (list): a list of contents 
+                columns (list): a list of names
+            
+        Returns:
+                None
+    '''
 
-    poemDict = format_post(poemRow, columns)
+    poem_dict = format_post(poemRow, columns)
+
+    # making more readable variables
+    headline = poem_dict.get('title', '')
+    content = poem_dict.get('content', None)
+    tags = poem_dict['tags'] # I guess tags is always set?
+    cws = poem_dict.get('cws')
+    
+    attachment = poem_dict.get('attachment', None)
+    alt = poem_dict.get('alt', None)
+
 
     # importing the cohost posting bot
     from cohost.models.user import User
     from cohost.models.block import AttachmentBlock, MarkdownBlock
 
-
     #Creates a block to add to the cohost post
-    if poemDict['attachment'] and not poemDict['alt']:
-        blocks = [AttachmentBlock(poemDict['attachment']),
-                MarkdownBlock(poemDict['content'])]
-    elif poemDict['attachment'] and poemDict['alt']:
-        blocks = [AttachmentBlock(poemDict['attachment'], alt_text=poemDict['alt']),
-                MarkdownBlock(poemDict['content'])]
+    if attachment:
+        blocks = [AttachmentBlock(filepath=attachment, alt_text=alt),
+                MarkdownBlock(content)]
     else:
-        blocks = [MarkdownBlock(poemDict['content'])]
+        blocks = [MarkdownBlock(content)]
 
     #get login from .env
     load_dotenv()
@@ -45,29 +72,33 @@ def make_post(poemRow, columns):
     project = user.getProject('dailypoem') # will retrieve the page I have edit writes for with handle @dailypoem
     print("pulled up project")
 
-    if poemDict['title']:
-        newPost = project.post(poemDict['title'], blocks, tags=poemDict['tags'])
-    else:
-        newPost = project.post(headline="", blocks=blocks, tags=poemDict['tags'])
-
+    # make the actual post. the page returns a 403 if it's private (i think??) so it's an exception
     try:
-        writeFile("Success", f"my poem is at {format(newPost.url)}")
+        newPost = project.post(headline=headline, blocks=blocks, tags=tags, cws=cws, draft=True)
+    except PermissionError:
+        write_file("Private", "the page is private. Unprivate it and try again.")
+
+    # calls write_file to write the URL to a file. there's an attribute error when it's a draft (because it can't reach the URL)
+    try:
+        write_file("Success", f"my poem is [here]({format(newPost.url)})!")
     except AttributeError:
-        writeFile("SuccessDraft", "the draft posted, just trust me")
+        write_file("Draft", "the draft posted, just trust me.")
+
 
 #find the poem row after the row we left off at
-lastPoemRow = cur.execute("SELECT * FROM poems WHERE rowid = (SELECT max(poem_id) FROM pointer)")
+last_poem_row = cur.execute("SELECT * FROM poems WHERE rowid = (SELECT max(poem_id) FROM pointer)")
 
-columnNames = [desc[0] for desc in lastPoemRow.description]
+column_names = [desc[0] for desc in last_poem_row.description]
     #remove tuple
-lastPoemRow = [item for tup in lastPoemRow for item in tup]
+last_poem_row = [item for tup in last_poem_row for item in tup]
 
 # if the row exists, make the post
-if lastPoemRow != []:
-    make_post(lastPoemRow, columnNames)
+if last_poem_row != []:
+    make_post(last_poem_row, column_names)
     #increase pointer so we go to the next poem next run
     cur.execute("UPDATE pointer SET poem_id = (SELECT max(poem_id) FROM pointer) + 1")
     con.commit()
-elif lastPoemRow == []:
-    writeFile("NO_POEM_TODAY_", "I need to add more poems!")
+# if the last row matching the pointer doesn't exist (i.e. the pointer is past the amount of poems I have in the db) then make a file that alerts me
+elif last_poem_row == []:
+    write_file("NO_POEMS", "I need to add more poems!")
     
