@@ -1,9 +1,10 @@
 # access sqlite3 db where the poems are
 import sqlite3
 from dotenv import load_dotenv
+load_dotenv()
 import os
 from formatpost import format_post
-
+print(os.getenv("COHOST_USER"))
 con = sqlite3.connect('poems.db')
 
 cur = con.cursor()
@@ -22,13 +23,14 @@ def write_file(filename, content):
     # imports datetime module and gets the time now
     import datetime
     now = datetime.datetime.now()
-    # names file after filename parameter + date formatted as April_23 with a markdown extension (so that links are clickable if present)
-    name_of_file = f"C:\\Users\\maddi\\Desktop\\{filename}_{now.strftime('%b')}_{now.strftime('%d')}.md"
-
+    # names file after filename parameter + date formatted as April_23
+    path = os.getenv("DESKTOP")
+    name_of_file = f"{path}{filename}_{now.strftime('%b')}_{now.strftime('%d')}.txt"
+    print(name_of_file)
     # writes to file mentioning the date and the content.
     with open(name_of_file, "a+") as f:
+        print(f)
         f.write(f"It's {now.strftime('%x')} and {content}\n")
-
 
 def make_post(poemRow, columns):
     '''
@@ -65,24 +67,32 @@ def make_post(poemRow, columns):
     else:
         blocks = [MarkdownBlock(content)]
 
-    #get login from .env
-    load_dotenv()
-    user = User.login(os.getenv("COHOST_USER"), os.getenv("COHOST_PASS"))
-    print("logged in")
-    project = user.getProject('dailypoem') # will retrieve the page I have edit writes for with handle @dailypoem
-    print("pulled up project")
+    # tries to log in
+    try:
+        user = User.login(os.getenv("COHOST_USER"), os.getenv("COHOST_PASS"))
+        print("logged in")
+    except PermissionError:
+        write_file("FAILURE" "I couldn't log in :(")
+        # exits function
+        return
+        
+    # will retrieve the page I have edit writes for
+    project = os.getenv("PROJECT")
+    project = user.getProject(project) 
+    print(f"pulled up project {project}")
 
     # make the actual post. the page returns a 403 if it's private (i think??) so it's an exception
     try:
         newPost = project.post(headline=headline, blocks=blocks, tags=tags, cws=cws)
     except PermissionError:
-        write_file("Private", "the page is private. Unprivate it and try again.")
+        write_file("PRIVATE", "the page is private. Unprivate it and try again.")
 
     # calls write_file to write the URL to a file. there's an attribute error when it's a draft (because it can't reach the URL)
     try:
-        write_file("Success", f"my poem is [here]({format(newPost.url)})!")
+        write_file("Success", f"my poem is here!: {format(newPost.url)}")
     except AttributeError:
         write_file("Draft", "the draft posted, just trust me.")
+
 
 
 #find the poem row after the row we left off at
@@ -101,4 +111,3 @@ if last_poem_row != []:
 # if the last row matching the pointer doesn't exist (i.e. the pointer is past the amount of poems I have in the db) then make a file that alerts me
 elif last_poem_row == []:
     write_file("NO_POEMS", "I need to add more poems!")
-    

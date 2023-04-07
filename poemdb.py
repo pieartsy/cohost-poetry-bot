@@ -4,13 +4,13 @@ con = sqlite3.connect('poems.db')
 
 cur = con.cursor()
 
-cur.execute("CREATE TABLE IF NOT EXISTS pointer(poem_id INT)")
-cur.execute("CREATE TABLE IF NOT EXISTS poems(title TEXT, author TEXT, lines TEXT, tags TEXT, attachment TEXT, alt TEXT, cws TEXT, UNIQUE(lines))")
+#cur.execute("CREATE TABLE IF NOT EXISTS pointer(poem_id INT)")
+#cur.execute("CREATE TABLE IF NOT EXISTS poems(title TEXT, author TEXT, lines TEXT, tags TEXT, attachment TEXT, alt TEXT, cws TEXT, UNIQUE(lines))")
 
 import os
 poem_list = os.listdir("poems")
 attachment_list = os.listdir("attachments")
-    
+
 def insert_data(filename):
     '''
     Reads data from the /poems directory then inserts the data into a database

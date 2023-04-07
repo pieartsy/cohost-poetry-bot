@@ -17,7 +17,7 @@ def format_post(poem_row, columns):
     #making the content block
     poem_dict['content'] = f"*by {poem_dict['author']}*"
     if poem_dict['lines']:
-        poem_dict['content'] += "<br><br>" + poem_dict['lines'].replace("\n", "<br>")
+        poem_dict['content'] += "<br><br>" + poem_dict['lines'].replace("\n", "<br>").replace("	", "&emsp;")
     
     #making the tag block
     if poem_dict['tags']:

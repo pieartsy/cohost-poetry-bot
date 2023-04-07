@@ -1,5 +1,5 @@
 .env
-poetryvenv
+poemvenv
 poems.db
 poems
 attachments
