@@ -29,12 +29,11 @@ def write_file(filename, content):
     print(name_of_file)
     # writes to file mentioning the date and the content.
     with open(name_of_file, "a+") as f:
-        print(f)
         f.write(f"It's {now.strftime('%x')} and {content}\n")
 
 def make_post(poemRow, columns):
     '''
-    Logs in with the cohost API and makes a cohost post based off the formatted poem data from the database
+    Logs in with the cohost API and makes a cohost post based off the formatted poem data from the database.
             
         Parameters:
                 poem_row (list): a list of contents 
@@ -45,7 +44,6 @@ def make_post(poemRow, columns):
     '''
 
     poem_dict = format_post(poemRow, columns)
-
     # making more readable variables
     headline = poem_dict.get('title', '')
     content = poem_dict.get('content', None)
@@ -105,6 +103,8 @@ last_poem_row = [item for tup in last_poem_row for item in tup]
 # if the row exists, make the post
 if last_poem_row != []:
     make_post(last_poem_row, column_names)
+    #adds the title and name of the poem to "published" for reference
+    cur.execute("INSERT INTO published (author, title) SELECT author, title FROM poems INNER JOIN pointer ON poems.ROWID = pointer.poem_id")
     #increase pointer so we go to the next poem next run
     cur.execute("UPDATE pointer SET poem_id = (SELECT max(poem_id) FROM pointer) + 1")
     con.commit()

@@ -25,8 +25,11 @@ def format_post(poem_row, columns):
     else:
         poem_dict['tags'] = ['poem', 'poetry', 'poem a day', 'daily poem', poem_dict['author']]
     
-    if poem_dict['title']:
+    if poem_dict['title'] and not poem_dict['title'] == "NULLTITLE":
         poem_dict['tags'].append(poem_dict['title'])
+    #makes title none if the title is NULLTITLE in the db
+    elif poem_dict == NULLTITLE:
+        poem_dict['title'] = None
 
     #CWs list
     if poem_dict['cws']:

@@ -5,7 +5,7 @@ con = sqlite3.connect('poems.db')
 cur = con.cursor()
 
 #cur.execute("CREATE TABLE IF NOT EXISTS pointer(poem_id INT)")
-#cur.execute("CREATE TABLE IF NOT EXISTS poems(title TEXT, author TEXT, lines TEXT, tags TEXT, attachment TEXT, alt TEXT, cws TEXT, UNIQUE(lines))")
+#cur.execute("CREATE TABLE IF NOT EXISTS poems(title TEXT, author TEXT, lines TEXT, tags TEXT, cws TEXT, attachment TEXT, alt TEXT,  PRIMARY KEY(title, author))")
 
 import os
 poem_list = os.listdir("poems")
@@ -37,12 +37,12 @@ def insert_data(filename):
             poem_data.append(None)
 
     #Attachment replaced with 'None' if it isn't valid.
-    if poem_data[4] and not (poem_data[4] in attachment_list and poem_data[4].endswith(('.png', '.jpg'))):
+    if poem_data[5] and not (poem_data[5] in attachment_list and poem_data[5].endswith(('.png', '.jpg'))):
         print("non-valid attachment:", poem_data[4])
         poem_data[4] = None
 
-        
-    cur.execute("INSERT OR IGNORE INTO poems(title, author, lines, tags, cws, attachment, alt) VALUES(?, ?, ?, ?, ?, ?, ?)", (poem_data))
+    # inserts the stuff into the poems table or updates it if there's already the same author and title in the table.
+    cur.execute("INSERT INTO poems (title, author, lines, tags, cws, attachment, alt) VALUES(?, ?, ?, ?, ?, ?, ?) ON CONFLICT(title, author) DO UPDATE SET lines=excluded.lines, tags=excluded.tags, cws=excluded.cws, attachment=excluded.attachment, alt=excluded.alt", (poem_data))
     con.commit()
 
 for poem in poem_list:
